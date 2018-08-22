@@ -56,12 +56,6 @@ func (c *RemoteClient) Get() (*remote.Payload, error) {
 		return nil, nil
 	case http.StatusNotFound:
 		return nil, nil
-	case http.StatusUnauthorized:
-		return nil, fmt.Errorf("HTTP remote state endpoint requires auth")
-	case http.StatusForbidden:
-		return nil, fmt.Errorf("HTTP remote state endpoint invalid auth")
-	case http.StatusInternalServerError:
-		return nil, fmt.Errorf("HTTP remote state internal server error")
 	default:
 		return nil, fmt.Errorf("Unexpected HTTP response code %d", resp.StatusCode)
 	}
@@ -76,11 +70,6 @@ func (c *RemoteClient) Get() (*remote.Payload, error) {
 	payload := &remote.Payload{
 		Data: buf.Bytes(),
 	}
-
-	// If there was no data, then return nil
-	//if buf == nil || len(buf.Bytes()) == 0 {
-	//	return nil, fmt.Errorf("[DEBUG] State %s has no data.", addressURL)
-	//}
 
 	md5 := md5.Sum(buf.Bytes())
 	// If there was no data, then return nil

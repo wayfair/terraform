@@ -13,6 +13,28 @@ import (
 	"testing"
 )
 
+// TestStatePath construct the path based on named state
+func TestStatePath(t *testing.T) {
+	cases := []struct {
+		name          string
+		wantStatePath string
+		wantLockPath  string
+	}{
+		{"default", "/default.tfstate", "/default.tflock"},
+		{"test", "/test.tfstate", "/test.tflock"},
+	}
+	for _, c := range cases {
+		b := new(Backend)
+		if got := b.statePath(c.name); got != c.wantStatePath {
+			t.Errorf("statePath(%q) = %q, want %q", c.name, got, c.wantStatePath)
+		}
+
+		if got := b.lockPath(c.name); got != c.wantLockPath {
+			t.Errorf("lockPath(%q) = %q, want %q", c.name, got, c.wantLockPath)
+		}
+	}
+}
+
 func TestBackend_impl(t *testing.T) {
 	var _ backend.Backend = new(Backend)
 }
