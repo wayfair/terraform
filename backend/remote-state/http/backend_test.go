@@ -40,6 +40,7 @@ func TestBackend_impl(t *testing.T) {
 }
 
 func TestBackendConfig(t *testing.T) {
+
 	//start an http server to test
 	handler := new(testHTTPHandler)
 	ts := httptest.NewServer(http.HandlerFunc(handler.Handle))
@@ -53,6 +54,7 @@ func TestBackendConfig(t *testing.T) {
 	config := map[string]interface{}{
 		"address": urls,
 	}
+
 	//backends
 	b := backend.TestBackendConfig(t, New(), config).(*Backend)
 	//Test if backend address matches the URL

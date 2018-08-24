@@ -184,7 +184,9 @@ func (b *Backend) configure(ctx context.Context) error {
 		b.password = v.(string)
 	}
 
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: time.Second * 10,
+	}
 
 	if v, ok := data.GetOk("skip_cert_verification"); ok {
 		b.skipTLS = v.(bool)
@@ -200,7 +202,7 @@ func (b *Backend) configure(ctx context.Context) error {
 			// If mutual_tls_authentication is also set, raise an error
 			if data.Get("mutual_tls_authentication").(bool) == true {
 				return fmt.Errorf("skip_cert_verification is true and mutual_tls_authentication is set. please choose one or the other")
-			} //else {
+			}
 			// Replace the client with one that ignores TLS verification
 			client = &http.Client{
 				Timeout: time.Second * 10,
@@ -217,7 +219,7 @@ func (b *Backend) configure(ctx context.Context) error {
 		// If local_cert_ca_file exists, the address must be of type HTTPS
 		if !isHTTPS(addressURL) {
 			return fmt.Errorf("Address must be of type HTTPS if local_cert_ca_file is set")
-		} //else {
+		}
 		if data.Get("mutual_tls_authentication").(bool) == true {
 			return fmt.Errorf("mutual_tls_authentication is true and local_cert_ca_file is set. Please choose one or the other")
 		}
@@ -249,7 +251,6 @@ func (b *Backend) configure(ctx context.Context) error {
 				},
 			},
 		}
-		//	}
 	}
 
 	if v, ok := data.GetOk("mutual_tls_authentication"); ok {

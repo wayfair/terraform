@@ -163,11 +163,6 @@ func (b *Backend) lockPath(name string) string {
 	return path
 }
 
-// Client initialized
-func (b *Backend) Client() *RemoteClient {
-	return &RemoteClient{}
-}
-
 const errStateUnlock = `
 Error unlocking http state. Lock ID: %s
 

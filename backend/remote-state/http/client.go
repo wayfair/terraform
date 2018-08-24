@@ -23,7 +23,6 @@ import (
 type RemoteClient struct {
 	client *http.Client
 
-	// The fields below are set from configure
 	address       string
 	updateMethod  string
 	lockAddress   string
@@ -37,12 +36,12 @@ type RemoteClient struct {
 	jsonLockInfo []byte
 }
 
-// Get blah
+// Get state file and return the payload.
 func (c *RemoteClient) Get() (*remote.Payload, error) {
 	// Convert address to type URL
 	addressURL, _ := url.Parse(c.address)
 
-	resp, err := c.httpRequest("GET", addressURL, nil, "get state")
+	resp, err := c.httpRequest(http.MethodGet, addressURL, nil, "get state")
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +94,7 @@ func (c *RemoteClient) Get() (*remote.Payload, error) {
 	return payload, nil
 }
 
-// Put state
+// Put state file
 func (c *RemoteClient) Put(data []byte) error {
 	// Copy the target URL
 	addressURL, _ := url.Parse(c.address)
@@ -108,8 +107,7 @@ func (c *RemoteClient) Put(data []byte) error {
 		base.RawQuery = query.Encode()
 	}
 
-	var method = c.updateMethod
-	resp, err := c.httpRequest(method, &base, &data, "upload state")
+	resp, err := c.httpRequest(c.updateMethod, &base, &data, "upload state")
 	if err != nil {
 		return err
 	}
@@ -124,11 +122,11 @@ func (c *RemoteClient) Put(data []byte) error {
 	}
 }
 
-// Delete state
+// Delete state file
 func (c *RemoteClient) Delete() error {
 	// Make the request
 	addressURL, _ := url.Parse(c.address)
-	resp, err := c.httpRequest("DELETE", addressURL, nil, "delete state")
+	resp, err := c.httpRequest(http.MethodDelete, addressURL, nil, "delete state")
 	if err != nil {
 		return err
 	}
@@ -164,9 +162,7 @@ func (c *RemoteClient) Lock(info *state.LockInfo) (string, error) {
 		c.jsonLockInfo = jsonLockInfo
 		return info.ID, nil
 	case http.StatusConflict, http.StatusLocked:
-		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
-
 		if err != nil {
 			return "", fmt.Errorf("HTTP remote state already locked, failed to read body")
 		}
@@ -214,6 +210,7 @@ func (c *RemoteClient) Unlock(id string) error {
 	}
 }
 
+// lockError appends the lockID and lockInfo in case of error
 func (c *RemoteClient) lockError(err error) *state.LockError {
 	lockErr := &state.LockError{
 		Err: err,
@@ -234,7 +231,7 @@ func (c *RemoteClient) lockInfo() (*state.LockInfo, error) {
 	// Convert address to type URL
 	lockURL, _ := url.Parse(c.lockAddress)
 
-	resp, err := c.httpRequest("GET", lockURL, nil, "get lock")
+	resp, err := c.httpRequest(http.MethodGet, lockURL, nil, "get lock")
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +248,10 @@ func (c *RemoteClient) lockInfo() (*state.LockInfo, error) {
 
 	switch resp.StatusCode {
 	case http.StatusOK:
-		readBuf, _ := ioutil.ReadAll(buf)
+		readBuf, err := ioutil.ReadAll(buf)
+		if err != nil {
+			return nil, fmt.Errorf("ioutil.ReadAll(%T) error: %v", buf, err)
+		}
 		if err := json.Unmarshal(readBuf, info); err != nil {
 			return nil, err
 		}
@@ -261,6 +261,7 @@ func (c *RemoteClient) lockInfo() (*state.LockInfo, error) {
 	}
 }
 
+// httpRequest is used to make http call with the given method on the given URL and returning the response.
 func (c *RemoteClient) httpRequest(method string, url *url.URL, data *[]byte, what string) (*http.Response, error) {
 	// If we have data we need a reader
 	var reader io.Reader
