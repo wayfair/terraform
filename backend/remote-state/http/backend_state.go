@@ -34,22 +34,30 @@ func (b *Backend) States() ([]string, error) {
 		return nil, err
 	}
 	// Read in the body
-	// Get all the data sent by REST
 	buff := string(resp.Data)
+	// Get all data and make it a slice.
+	// The REST API should return all the files from the root of the project name.
+	// This means we get all the state files of a project
+	// ex. buff := "default.tfstate default.tflock foo.tfstate bar.tfstate"
 	buff = strings.Replace(buff, ",", " ", -1)
+	// make it a slice so we can search and loop thru it
 	buffSlice := strings.Fields(buff)
-	sort.Strings(buffSlice)
 	for _, el := range buffSlice {
 		// iterate on response and make sure we only get .tfstate files
-		// This should be implemented in REST API but just to be safe.
+		// This can be implemented in REST API but just to be safe.
+		// get the base name
 		fName := filepath.Base(el)
+		// get the extension
 		extName := filepath.Ext(el)
+		// separate them
 		bname := fName[:len(fName)-len(extName)]
 		if extName == stateFileSuffix {
+			// append the state to the result
 			result = append(result, bname)
 		}
 	}
-
+	// sort again so we can binary check if backend.DefaultStateName is already in the result.
+	// If not, add it.(backend.DefaultStateName should always be present)
 	sort.Strings(result[1:])
 	if sort.SearchStrings(result, backend.DefaultStateName) == 0 {
 		result = append(result, backend.DefaultStateName)
@@ -123,12 +131,10 @@ func (b *Backend) State(name string) (state.State, error) {
 		}
 
 		if err := stateMgr.WriteState(terraform.NewState()); err != nil {
-			err = lockUnlock(err)
-			return nil, err
+			return nil, lockUnlock(err)
 		}
 		if err := stateMgr.PersistState(); err != nil {
-			err = lockUnlock(err)
-			return nil, err
+			return nil, lockUnlock(err)
 		}
 
 		// Unlock, the state should now be initialized
