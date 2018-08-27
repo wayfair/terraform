@@ -290,10 +290,5 @@ func (c *RemoteClient) httpRequest(method string, url *url.URL, data *[]byte, wh
 	}
 
 	// Make the request
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to %s: %v", what, err)
-	}
-
-	return resp, nil
+	return c.client.Do(req)
 }
