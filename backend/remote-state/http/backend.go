@@ -324,6 +324,7 @@ func (b *Backend) configure(ctx context.Context) error {
 	return nil
 }
 
+//assertValidURL Parse URI and validate
 func assertValidURL(addr string) error {
 	addre, err := url.ParseRequestURI(addr)
 	if err != nil {
@@ -335,6 +336,7 @@ func assertValidURL(addr string) error {
 	return nil
 }
 
+//isHTTPS checks if address is of type https
 func isHTTPS(addr string) bool {
 	addre, _ := url.ParseRequestURI(addr)
 	if addre.Scheme == "https" {
