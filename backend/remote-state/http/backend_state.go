@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/hashicorp/terraform/backend"
@@ -56,13 +55,13 @@ func (b *Backend) States() ([]string, error) {
 			result = append(result, bname)
 		}
 	}
-	// sort again so we can binary check if backend.DefaultStateName is already in the result.
-	// If not, add it.(backend.DefaultStateName should always be present)
-	sort.Strings(result[1:])
-	if sort.SearchStrings(result, backend.DefaultStateName) == 0 {
-		result = append(result, backend.DefaultStateName)
+	// check if we already have default named state and add it otherwise
+	for _, n := range result {
+		if backend.DefaultStateName == n {
+			return result, nil
+		}
 	}
-	return result, nil
+	return append(result, backend.DefaultStateName), nil
 }
 
 // DeleteState deletes a state file
