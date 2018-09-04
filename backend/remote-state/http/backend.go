@@ -90,21 +90,24 @@ func New() backend.Backend {
 			},
 
 			"local_cert_file": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Cert file to be used for mutual tls authentication.",
+				Type:          schema.TypeString,
+				Optional:      true,
+				ConflictsWith: []string{"local_cert_ca_file"},
+				Description:   "Cert file to be used for mutual tls authentication.",
 			},
 
 			"local_key_file": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Key file to be used for mutual tls authentication.",
+				Type:          schema.TypeString,
+				Optional:      true,
+				ConflictsWith: []string{"local_cert_ca_file"},
+				Description:   "Key file to be used for mutual tls authentication.",
 			},
 
 			"local_ca_file": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "CA to be used for mutual tls authentication.",
+				Type:          schema.TypeString,
+				Optional:      true,
+				ConflictsWith: []string{"local_cert_ca_file"},
+				Description:   "CA to be used for mutual tls authentication.",
 			},
 		},
 	}
@@ -212,13 +215,10 @@ func (b *Backend) configure(ctx context.Context) error {
 			if data.Get("mutual_tls_authentication").(bool) == true {
 				return fmt.Errorf("skip_cert_verification is true and mutual_tls_authentication is set. please choose one or the other")
 			}
-			// Replace the client with one that ignores TLS verification
-			client = &http.Client{
-				Timeout: time.Second * 10,
-				Transport: &http.Transport{
-					TLSClientConfig: &tls.Config{
-						InsecureSkipVerify: true,
-					},
+			// add the option to ignores TLS verification to our client
+			client.Transport = &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: true,
 				},
 			}
 		}
@@ -228,9 +228,6 @@ func (b *Backend) configure(ctx context.Context) error {
 		// If local_cert_ca_file exists, the address must be of type HTTPS
 		if !isHTTPS(addressURL) {
 			return fmt.Errorf("Address must be of type HTTPS if local_cert_ca_file is set")
-		}
-		if data.Get("mutual_tls_authentication").(bool) == true {
-			return fmt.Errorf("mutual_tls_authentication is true and local_cert_ca_file is set. Please choose one or the other")
 		}
 		if data.Get("skip_cert_verification").(bool) == true {
 			return fmt.Errorf("skip_cert_verification is true and local_cert_ca_file is set. Please choose one or the other")
@@ -251,21 +248,16 @@ func (b *Backend) configure(ctx context.Context) error {
 		if ok := rootCAs.AppendCertsFromPEM(cert); !ok {
 			return fmt.Errorf("No certs could be appended: %s", cert)
 		}
-		// Replace the client with one that contains the CA.
-		client = &http.Client{
-			Timeout: time.Second * 10,
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					RootCAs: rootCAs,
-				},
+		// add RootCas to our client
+		client.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				RootCAs: rootCAs,
 			},
 		}
 	}
 
 	if v, ok := data.GetOk("mutual_tls_authentication"); ok {
-		b.mutualTLS = v.(bool)
-
-		if b.mutualTLS {
+		if b.mutualTLS = v.(bool); b.mutualTLS {
 			// If mutual_tls_authentication = true, the address must be of type HTTPS
 			if !isHTTPS(addressURL) {
 				return fmt.Errorf("Address must be of type HTTPS if mutual_tls_authentication = true")
@@ -307,14 +299,11 @@ func (b *Backend) configure(ctx context.Context) error {
 			if ok := rootCAs.AppendCertsFromPEM(cert); !ok {
 				return fmt.Errorf("No certs could be appended: %s", cert)
 			}
-			// Replace the client with one that contains the certs.
-			client = &http.Client{
-				Timeout: time.Second * 10,
-				Transport: &http.Transport{
-					TLSClientConfig: &tls.Config{
-						Certificates: []tls.Certificate{certs},
-						RootCAs:      rootCAs,
-					},
+			// add the certificate and the rootCAs for our mutual tls authentication
+			client.Transport = &http.Transport{
+				TLSClientConfig: &tls.Config{
+					Certificates: []tls.Certificate{certs},
+					RootCAs:      rootCAs,
 				},
 			}
 		}

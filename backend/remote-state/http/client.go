@@ -64,17 +64,18 @@ func (c *RemoteClient) Get() (*remote.Payload, error) {
 	if _, err := io.Copy(buf, resp.Body); err != nil {
 		return nil, fmt.Errorf("Failed to read remote state: %s", err)
 	}
+	// If there was no data, then return nil
+	bufBytes := buf.Bytes()
+	if len(bufBytes) == 0 {
+		return nil, nil
+	}
 
 	// Create the payload
 	payload := &remote.Payload{
-		Data: buf.Bytes(),
+		Data: bufBytes,
 	}
 
-	md5 := md5.Sum(buf.Bytes())
-	// If there was no data, then return nil
-	if len(payload.Data) == 0 {
-		return nil, nil
-	}
+	md5 := md5.Sum(bufBytes)
 
 	// Check for the MD5
 	if raw := resp.Header.Get("Content-MD5"); raw != "" {
@@ -87,8 +88,7 @@ func (c *RemoteClient) Get() (*remote.Payload, error) {
 		payload.MD5 = md5
 	} else {
 		// Generate the MD5
-		hash := md5
-		payload.MD5 = hash[:]
+		payload.MD5 = md5[:]
 	}
 
 	return payload, nil
