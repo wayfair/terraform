@@ -61,10 +61,10 @@ The following configuration options are supported:
  * `skip_cert_verification` - (Optional) Whether to skip TLS verification.
    If set, address needs to be of type https.
    Defaults to `false`.
- * `local_cert_ca_file` - (Optional) When you don't want to skip_cert_verification and you're using a self signed certificate.
+ * `local_ca_file` - (Optional) When you don't want to skip_cert_verification and you're using a self signed certificate.
+  (Required) when you are using mutual_tls_authentication.
   (Will be appended to the system pool.) If set, address needs to be of type https.
  * `mutual_tls_authentication` - (Optional) Used when you want to authenticate the client with the server.
    If set, address needs to be of type https and also the following are required:
   * `local_cert_file` - (Required) Client PEM certificate file.
   * `local_key_file` - (Required) Client PEM key certificate file.
-  * `local_ca_file` - (Required) Client PEM CA certificate file. (Will be appended to the system pool.)
