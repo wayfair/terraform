@@ -76,11 +76,13 @@ func New() backend.Backend {
 				Default:     false,
 				Description: "(Optional) Whether to skip TLS verification. Defaults to false.",
 			},
+
 			"local_ca_file": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "CA to be used for TLS",
 			},
+
 			"mutual_tls_authentication": {
 				Type:        schema.TypeBool,
 				Optional:    true,
