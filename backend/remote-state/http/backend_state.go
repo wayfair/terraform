@@ -41,27 +41,29 @@ func (b *Backend) States() ([]string, error) {
 	buff = strings.Replace(buff, ",", " ", -1)
 	// make it a slice so we can search and loop thru it
 	buffSlice := strings.Fields(buff)
+	// tracks whether or not we've seen the default state
+	foundDefaultState := false
 	for _, el := range buffSlice {
-		// iterate on response and make sure we only get .tfstate files
-		// This can be implemented in REST API but just to be safe.
-		// get the base name
-		fName := filepath.Base(el)
-		// get the extension
+		// not a TF state file, skip
 		extName := filepath.Ext(el)
-		// separate them
-		bname := fName[:len(fName)-len(extName)]
-		if extName == stateFileSuffix {
-			// append the state to the result
-			result = append(result, bname)
+		if extName != stateFileSuffix {
+			continue
+		}
+		// basename of the file with extension
+		fName := filepath.Base(el)
+		// remove the extension to get file name, add to list of results
+		file := fName[:len(fName)-len(extName)]
+		result = append(result, file)
+		// we found the default state file
+		if file == backend.DefaultStateName {
+			foundDefaultState = true
 		}
 	}
-	// check if we already have default named state and add it otherwise
-	for _, n := range result {
-		if backend.DefaultStateName == n {
-			return result, nil
-		}
+	// did not encounter the default state, add it now
+	if !foundDefaultState {
+		return append(result, backend.DefaultStateName), nil
 	}
-	return append(result, backend.DefaultStateName), nil
+	return result, nil
 }
 
 // DeleteState deletes a state file
