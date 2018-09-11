@@ -71,11 +71,10 @@ func New() backend.Backend {
 			},
 
 			"skip_cert_verification": {
-				Type:          schema.TypeBool,
-				Optional:      true,
-				Default:       false,
-				ConflictsWith: []string{"local_ca_file"},
-				Description:   "(Optional) Whether to skip TLS verification. Defaults to false.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "(Optional) Whether to skip TLS verification. Defaults to false.",
 			},
 			"local_ca_file": {
 				Type:        schema.TypeString,
@@ -83,11 +82,10 @@ func New() backend.Backend {
 				Description: "CA to be used for TLS",
 			},
 			"mutual_tls_authentication": {
-				Type:          schema.TypeBool,
-				Optional:      true,
-				Default:       false,
-				ConflictsWith: []string{"local_ca_file"},
-				Description:   "Use mutual tls authentication.local_cert_file, local_key_file, local_ca_file needs to be set. Defaults to false.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "Use mutual tls authentication. local_ca_file, local_cert_file, local_key_file needs to be set. Defaults to false.",
 			},
 
 			"local_cert_file": {
@@ -197,14 +195,6 @@ func (b *Backend) configure(ctx context.Context) error {
 		if !isHTTPS(addressURL) {
 			return fmt.Errorf("Address must be of type HTTPS if skip_cert_verification = true")
 		}
-		// If local_ca_file is also set, raise an error
-		if v, ok := data.GetOk("local_ca_file"); ok {
-			return fmt.Errorf("skip_cert_verification is %t and local_ca_file is set: %s. please choose one or the other", b.skipTLS, v)
-		}
-		// If mutual_tls_authentication is also set, raise an error
-		if data.Get("mutual_tls_authentication").(bool) == true {
-			return fmt.Errorf("skip_cert_verification is true and mutual_tls_authentication is set. please choose one or the other")
-		}
 		log.Printf("[DEBUG] Using https client with skipping cert verification")
 		// add the option to ignores TLS verification to our client
 		client.Transport = &http.Transport{
@@ -219,9 +209,6 @@ func (b *Backend) configure(ctx context.Context) error {
 		// If local_cert_ca_file exists, the address must be of type HTTPS
 		if !isHTTPS(addressURL) {
 			return fmt.Errorf("Address must be of type HTTPS if local_ca_file is set")
-		}
-		if data.Get("skip_cert_verification").(bool) == true {
-			return fmt.Errorf("skip_cert_verification is true and local_ca_file is set. Please choose one or the other")
 		}
 		b.localCertCAFile = v.(string)
 
